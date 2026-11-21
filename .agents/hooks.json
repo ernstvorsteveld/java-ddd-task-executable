@@ -1,0 +1,16 @@
+{
+  "workspace-safety-guard": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ./hooks/guard_tools.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

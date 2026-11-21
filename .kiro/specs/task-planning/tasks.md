@@ -1,0 +1,25 @@
+# Tasks: Task Planning
+
+- [x] 1. Create Task (`ports.in` TDD)
+  - [x] 1.1 Write failing `ports.in.TaskPlanningPortTest` tests for `1.1`–`1.7` and define `domain.model` & `ports` contracts
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
+  - [x] 1.2 Implement `Task`, value objects (`TaskType`, `TaskVersion`, `TaskStatus`, `ProcessName`, `PlanningWindow`, `TaskExecutor`), `TaskPlanningService`, `InMemoryTaskRepository`, and `UuidTaskIdGenerator` until `1.1`–`1.7` pass
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
+- [x] 2. Update Task (`ports.in` TDD)
+  - [x] 2.1 Write failing `ports.in.TaskPlanningPortTest` tests for `2.1`–`2.3` and define `UpdateTaskUseCase`, `UpdateTaskCommand`, `TaskNotFoundException`, and `InvalidTaskStatusException`
+    - _Requirements: 2.1, 2.2, 2.3_
+  - [x] 2.2 Implement `Task.update(...)` and `TaskPlanningService.updateTask(...)` until `2.1`–`2.3` pass
+    - _Requirements: 2.1, 2.2, 2.3_
+- [x] 3. Query & Search Tasks (`ports.in` TDD)
+  - [x] 3.1 Write failing `ports.in.TaskPlanningPortTest` tests for `3.1`–`3.4` (`findById`, `findByExecutor`, `search`, defaults `pageNumber = 0` & `pageSize = 20`, invalid paging)
+    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+  - [x] 3.2 Implement `TaskSearchCriteria`, `FindTasksByExecutorQuery`, `SearchTasksQuery`, `TaskQuery`, and paginated `InMemoryTaskRepository` lookups until `3.1`–`3.4` pass
+    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+- [x] 4. Verify Architecture
+  - [x] 4.1 Run `./gradlew test` and confirm all `ports.in` and `HexagonalArchitectureTest` rules pass
+    - _Requirements: 1.1–1.7, 2.1–2.3, 3.1–3.4_
+- [x] 5. LinkedEntities (`ports.in` TDD)
+  - [x] 5.1 Write failing `ports.in.TaskPlanningPortTest` tests for `1.8` (empty & non-empty `LinkedEntities`, preserved across update, rejecting null/blank/invalid values) with `domain.model` & `ports` stubs
+    - _Requirements: 1.1, 1.8_
+  - [x] 5.2 Implement `EntityTypeName`, `EntityId`, `LinkedEntity`, `LinkedEntities`, `InvalidLinkedEntityException`, `Task`, `PlanTaskCommand`, `TaskCommandPayload`, MongoDB adapters, and REST adapter mapping until `./gradlew openApiGenerate test` passes
+    - _Requirements: 1.1, 1.8_

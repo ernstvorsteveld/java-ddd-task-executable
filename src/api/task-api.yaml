@@ -1,0 +1,294 @@
+openapi: 3.0.3
+info:
+  title: Task API
+  version: 0.1.0
+paths:
+  /tasks:
+    post:
+      tags:
+        - Tasks
+      operationId: createTask
+      summary: Submit a command to create a planned task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequestPayload'
+      responses:
+        '202':
+          description: Command accepted for asynchronous processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandAcceptedResponsePayload'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponsePayload'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponsePayload'
+    get:
+      tags:
+        - Tasks
+      operationId: searchTasks
+      summary: Search tasks with optional filters and pagination
+      parameters:
+        - name: executorType
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ExecutorTypeDto'
+        - name: executorId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/TaskStatusDto'
+        - name: type
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/TaskTypeDto'
+        - name: owner
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ProcessNameDto'
+        - name: pageNumber
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+      responses:
+        '200':
+          description: Matching page of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasksResponsePayload'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponsePayload'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponsePayload'
+  /tasks/{taskId}:
+    put:
+      tags:
+        - Tasks
+      operationId: updateTask
+      summary: Submit a command to update an existing task
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequestPayload'
+      responses:
+        '202':
+          description: Command accepted for asynchronous processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandAcceptedResponsePayload'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponsePayload'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponsePayload'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponsePayload'
+components:
+  schemas:
+    TaskTypeDto:
+      type: string
+      enum: [DO_AANVRAAG, DO_OPDRACHT, DO_OFFERTE, DO_CONTRACT]
+    ProcessNameDto:
+      type: string
+      enum: [PS_IE, PS_UE, PO_BO, PO_VG, PO_UG]
+    TaskStatusDto:
+      type: string
+      enum: [CREATED, IN_PROGRESS, PAUSED, CANCELLED, DONE]
+    ExecutorTypeDto:
+      type: string
+      enum: [USER, ROLE]
+    EntityTypeNameDto:
+      type: string
+      enum: [ENTITY_TYPE_1, ENTITY_TYPE_2, ENTITY_TYPE_3, ENTITY_TYPE_4]
+    LinkedEntityDto:
+      type: object
+      required: [typeName, entityId]
+      properties:
+        typeName:
+          $ref: '#/components/schemas/EntityTypeNameDto'
+        entityId:
+          type: string
+    TaskExecutorDto:
+      type: object
+      required: [type, id]
+      properties:
+        type:
+          $ref: '#/components/schemas/ExecutorTypeDto'
+        id:
+          type: string
+    CreateTaskRequestPayload:
+      type: object
+      required: [type, owner, startBefore, finishBefore, executor]
+      properties:
+        type:
+          $ref: '#/components/schemas/TaskTypeDto'
+        owner:
+          $ref: '#/components/schemas/ProcessNameDto'
+        startBefore:
+          type: string
+          format: date-time
+        finishBefore:
+          type: string
+          format: date-time
+        executor:
+          $ref: '#/components/schemas/TaskExecutorDto'
+        linkedEntities:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkedEntityDto'
+    UpdateTaskRequestPayload:
+      type: object
+      required: [status, startBefore, finishBefore, executor]
+      properties:
+        status:
+          $ref: '#/components/schemas/TaskStatusDto'
+        startBefore:
+          type: string
+          format: date-time
+        finishBefore:
+          type: string
+          format: date-time
+        executor:
+          $ref: '#/components/schemas/TaskExecutorDto'
+    CommandAcceptedResponsePayload:
+      type: object
+      required: [commandId, timestamp]
+      properties:
+        commandId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+    TaskResponsePayload:
+      type: object
+      required: [id, type, version, status, owner, startBefore, finishBefore, executor, linkedEntities]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/TaskTypeDto'
+        version:
+          type: integer
+        status:
+          $ref: '#/components/schemas/TaskStatusDto'
+        owner:
+          $ref: '#/components/schemas/ProcessNameDto'
+        startBefore:
+          type: string
+          format: date-time
+        finishBefore:
+          type: string
+          format: date-time
+        executor:
+          $ref: '#/components/schemas/TaskExecutorDto'
+        linkedEntities:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkedEntityDto'
+    TasksResponsePayload:
+      type: object
+      required: [tasks, count, pageNumber, pageSize]
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskResponsePayload'
+        count:
+          type: integer
+          minimum: 0
+        pageNumber:
+          type: integer
+          minimum: 0
+        pageSize:
+          type: integer
+          minimum: 1
+        executorType:
+          $ref: '#/components/schemas/ExecutorTypeDto'
+        executorId:
+          type: string
+        status:
+          $ref: '#/components/schemas/TaskStatusDto'
+        type:
+          $ref: '#/components/schemas/TaskTypeDto'
+        owner:
+          $ref: '#/components/schemas/ProcessNameDto'
+    ErrorItem:
+      type: object
+      required: [errorCode, timestamp, errorDescription]
+      properties:
+        errorCode:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        errorDescription:
+          type: string
+    ErrorResponsePayload:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorItem'
