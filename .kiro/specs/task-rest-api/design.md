@@ -10,4 +10,5 @@
 - `TaskRestExceptionHandler` (`@RestControllerAdvice`) — maps domain/request validation errors to `400 Bad Request`, `TaskNotFoundException` to `404 Not Found`, and unexpected errors to `500 Internal Server Error` using uniform `ErrorResponsePayload`.
 
 ## Verification
-- `architecture.HexagonalArchitectureTest` verifies generated OpenAPI stubs and `adapters.in.rest` remain strictly isolated from `domain`, `ports`, and `adapters.out`.
+- `adapters.in.rest.TaskRestControllerTest` — boots embedded Spring Boot Tomcat on a random port wired to real application services/listeners, typed `VirtualThreadCommandEventBus<T>`, and MongoDB Testcontainers, verifying `POST /tasks` (`202`), `PUT /tasks/{taskId}` (`202`), `GET /tasks` (`200`), and `400` uniform `ErrorResponsePayload` contracts over real HTTP using **REST Assured**.
+- `architecture.HexagonalArchitectureTest` & `architecture.TestBoundaryArchitectureTest` — verify generated OpenAPI stubs and `adapters.in.rest` stay strictly isolated from `domain`, `ports`, and `adapters.out`, and every `@RestController` has a matching HTTP API test.

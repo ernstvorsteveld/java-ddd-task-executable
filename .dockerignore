@@ -1,0 +1,15 @@
+.git
+.gitignore
+.gradle
+.idea
+.vscode
+.agents
+.kiro
+.java-version
+.DS_Store
+*.iml
+build
+README.md
+AGENTS.md
+Dockerfile
+compose.yaml

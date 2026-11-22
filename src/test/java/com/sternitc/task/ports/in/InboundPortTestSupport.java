@@ -9,14 +9,16 @@ import com.sternitc.task.adapters.out.async.VirtualThreadCommandEventBus;
 import com.sternitc.task.adapters.out.mongo.MongoCommandRepository;
 import com.sternitc.task.adapters.out.mongo.MongoTaskRepository;
 import com.sternitc.task.application.CommandQueryService;
-import com.sternitc.task.application.CommandStoredEventHandler;
+import com.sternitc.task.application.PlanTaskCommandListener;
 import com.sternitc.task.application.PlanTaskService;
 import com.sternitc.task.application.TaskQueryService;
+import com.sternitc.task.application.UpdateTaskCommandListener;
 import com.sternitc.task.application.UpdateTaskService;
 import com.sternitc.task.domain.model.CommandExecutionStatus;
 import com.sternitc.task.domain.model.CommandReceipt;
 import com.sternitc.task.domain.model.StoredCommand;
 import com.sternitc.task.domain.model.Task;
+import com.sternitc.task.domain.model.TaskCommandPayload;
 import com.sternitc.task.domain.model.TaskSearchCriteria;
 import java.time.Clock;
 import java.time.Duration;
@@ -47,7 +49,8 @@ abstract class InboundPortTestSupport {
     }
 
     protected MongoDatabase database;
-    private VirtualThreadCommandEventBus eventBus;
+    protected VirtualThreadCommandEventBus<TaskCommandPayload.PlanTask> planTaskEventBus;
+    protected VirtualThreadCommandEventBus<TaskCommandPayload.UpdateTask> updateTaskEventBus;
     protected PlanTaskUseCase planTaskUseCase;
     protected UpdateTaskUseCase updateTaskUseCase;
     protected TaskQuery taskQuery;
@@ -60,19 +63,28 @@ abstract class InboundPortTestSupport {
         var taskRepository = new MongoTaskRepository(database);
         var commandIdGenerator = new UuidCommandIdGenerator();
         var clock = Clock.fixed(FIXED_NOW, ZoneOffset.UTC);
-        eventBus = new VirtualThreadCommandEventBus();
-        var eventHandler = new CommandStoredEventHandler(commandRepository, taskRepository, new UuidTaskIdGenerator());
-        eventBus.subscribe(eventHandler::handle);
-        planTaskUseCase = new PlanTaskService(commandRepository, eventBus, commandIdGenerator, clock);
-        updateTaskUseCase = new UpdateTaskService(commandRepository, eventBus, commandIdGenerator, clock);
+
+        planTaskEventBus = new VirtualThreadCommandEventBus<>();
+        updateTaskEventBus = new VirtualThreadCommandEventBus<>();
+
+        var planTaskListener = new PlanTaskCommandListener(commandRepository, taskRepository, new UuidTaskIdGenerator());
+        var updateTaskListener = new UpdateTaskCommandListener(commandRepository, taskRepository);
+        planTaskEventBus.subscribe(planTaskListener::handle);
+        updateTaskEventBus.subscribe(updateTaskListener::handle);
+
+        planTaskUseCase = new PlanTaskService(commandRepository, planTaskEventBus, commandIdGenerator, clock);
+        updateTaskUseCase = new UpdateTaskService(commandRepository, updateTaskEventBus, commandIdGenerator, clock);
         taskQuery = new TaskQueryService(taskRepository);
         commandQuery = new CommandQueryService(commandRepository);
     }
 
     @AfterEach
     void tearDown() {
-        if (eventBus != null) {
-            eventBus.close();
+        if (planTaskEventBus != null) {
+            planTaskEventBus.close();
+        }
+        if (updateTaskEventBus != null) {
+            updateTaskEventBus.close();
         }
     }
 

@@ -14,3 +14,8 @@
 - [x] 4. Full Verification
   - [x] 4.1 Run `./gradlew openApiGenerate test` and confirm all Testcontainers MongoDB `ports.in` tests and `HexagonalArchitectureTest` rules pass
     - _Requirements: 1.1, 1.2, 2.1, 2.2_
+- [x] 5. Generic `CommandPayload`, Typed `VirtualThreadCommandEventBus<T>`, and Dedicated Command Listeners (`ports.in` TDD)
+  - [x] 5.1 Update `InboundPortTestSupport` to wire separate typed `VirtualThreadCommandEventBus<TaskCommandPayload.PlanTask>` and `VirtualThreadCommandEventBus<TaskCommandPayload.UpdateTask>` instances with `PlanTaskCommandListener` and `UpdateTaskCommandListener`, and add a failing `CommandQueryTest` verifying events are isolated to their typed bus/listener (`2.3`)
+    - _Requirements: 1.1, 2.1, 2.2, 2.3_
+  - [x] 5.2 Implement `CommandPayload`, update `TaskCommandPayload`, `StoredCommand`, `CommandStoredEvent<T extends CommandPayload>`, `CommandEventPublisher<T extends CommandPayload>`, `PlanTaskService`, `UpdateTaskService`, `VirtualThreadCommandEventBus<T extends CommandPayload>`, and `MongoCommandRepository`, replace `CommandStoredEventHandler` with `PlanTaskCommandListener` and `UpdateTaskCommandListener`, and verify with `./gradlew test`
+    - _Requirements: 1.1, 2.1, 2.2, 2.3_

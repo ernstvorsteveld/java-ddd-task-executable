@@ -1,6 +1,7 @@
 plugins {
     java
     alias(libs.plugins.openapi.generator)
+    alias(libs.plugins.spring.boot)
 }
 
 group = "com.sternitc"
@@ -73,6 +74,7 @@ dependencies {
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.mongodb)
     testImplementation(libs.awaitility)
+    testImplementation(libs.rest.assured)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

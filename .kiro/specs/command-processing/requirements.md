@@ -11,3 +11,4 @@
 
 2.1. WHEN a `CommandStoredEvent` is published, the system shall handle the command asynchronously and persist the resulting `Task` state so subsequent queries return it.
 2.2. IF asynchronous handling fails (such as an unknown `TaskId` on update), THEN the system shall record the failure on the stored command without modifying unrelated tasks.
+2.3. The system shall route each command type through a typed event channel to its own dedicated command listener so commands are published and handled independently per command type without dispatching to unrelated listeners.

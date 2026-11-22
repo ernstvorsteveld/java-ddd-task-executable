@@ -8,14 +8,14 @@ public final class StoredCommand {
 
     private final CommandId id;
     private final Instant timestamp;
-    private final TaskCommandPayload payload;
+    private final CommandPayload payload;
     private final CommandExecutionStatus status;
     private final String failureReason;
 
     private StoredCommand(
             CommandId id,
             Instant timestamp,
-            TaskCommandPayload payload,
+            CommandPayload payload,
             CommandExecutionStatus status,
             String failureReason
     ) {
@@ -26,14 +26,14 @@ public final class StoredCommand {
         this.failureReason = failureReason;
     }
 
-    public static StoredCommand accepted(CommandId id, Instant timestamp, TaskCommandPayload payload) {
+    public static StoredCommand accepted(CommandId id, Instant timestamp, CommandPayload payload) {
         return new StoredCommand(id, timestamp, payload, CommandExecutionStatus.PENDING, null);
     }
 
     public static StoredCommand reconstitute(
             CommandId id,
             Instant timestamp,
-            TaskCommandPayload payload,
+            CommandPayload payload,
             CommandExecutionStatus status,
             String failureReason
     ) {
@@ -57,7 +57,7 @@ public final class StoredCommand {
         return timestamp;
     }
 
-    public TaskCommandPayload payload() {
+    public CommandPayload payload() {
         return payload;
     }
 

@@ -29,10 +29,6 @@ public final class TaskRestExceptionHandler {
 
     private final Clock clock;
 
-    public TaskRestExceptionHandler() {
-        this(Clock.systemUTC());
-    }
-
     public TaskRestExceptionHandler(Clock clock) {
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }

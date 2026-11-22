@@ -2,7 +2,7 @@ package com.sternitc.task.domain.model;
 
 import java.util.Objects;
 
-public sealed interface TaskCommandPayload permits TaskCommandPayload.PlanTask, TaskCommandPayload.UpdateTask {
+public sealed interface TaskCommandPayload extends CommandPayload permits TaskCommandPayload.PlanTask, TaskCommandPayload.UpdateTask {
 
     record PlanTask(
             TaskType type,

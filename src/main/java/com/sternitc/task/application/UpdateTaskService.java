@@ -15,13 +15,13 @@ import java.util.Objects;
 public final class UpdateTaskService implements UpdateTaskUseCase {
 
     private final CommandRepository commandRepository;
-    private final CommandEventPublisher commandEventPublisher;
+    private final CommandEventPublisher<TaskCommandPayload.UpdateTask> commandEventPublisher;
     private final CommandIdGenerator commandIdGenerator;
     private final Clock clock;
 
     public UpdateTaskService(
             CommandRepository commandRepository,
-            CommandEventPublisher commandEventPublisher,
+            CommandEventPublisher<TaskCommandPayload.UpdateTask> commandEventPublisher,
             CommandIdGenerator commandIdGenerator,
             Clock clock
     ) {
@@ -42,7 +42,7 @@ public final class UpdateTaskService implements UpdateTaskUseCase {
         );
         StoredCommand stored = StoredCommand.accepted(commandIdGenerator.nextId(), clock.instant(), payload);
         commandRepository.save(stored);
-        commandEventPublisher.publish(new CommandStoredEvent(stored.id(), stored.timestamp()));
+        commandEventPublisher.publish(new CommandStoredEvent<>(stored.id(), stored.timestamp()));
         return stored.receipt();
     }
 }

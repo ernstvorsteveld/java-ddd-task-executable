@@ -6,9 +6,9 @@
 - **Java Version**: Target Java 27 via the Gradle Java toolchain (`JavaLanguageVersion.of(27)`).
 - **Strict Compiler Flags**: Compile all Java sources with UTF-8 encoding, `-Xlint:all`, `-Werror` (warnings fail the build), and `-parameters`.
 - **Approved Dependencies** (do not add or change without explicit approval per `workflow.md`):
-  - Plugins: **`org.openapi.generator`** (generates Spring REST server stubs into `build/generated/openapi`).
+  - Plugins: **`org.openapi.generator`** (generates Spring REST server stubs into `build/generated/openapi`), **`org.springframework.boot`** (`bootRun` / `bootJar`).
   - Production (`adapters` only; `domain` and `ports` stay pure JDK 27): **`org.springframework.boot:spring-boot-dependencies`** (BOM), **`spring-boot-starter-web`**, **`spring-boot-starter-validation`**, **`org.mongodb:mongodb-driver-sync`**.
-  - Test only (currently configured): **JUnit 5 (Jupiter)**, **AssertJ**, **ArchUnit**, **Testcontainers (`testcontainers-junit-jupiter`, `testcontainers-mongodb`)**, **Awaitility**.
+  - Test only (currently configured): **JUnit 5 (Jupiter)**, **AssertJ**, **ArchUnit**, **Testcontainers (`testcontainers-junit-jupiter`, `testcontainers-mongodb`)**, **Awaitility**, **REST Assured**.
   - Test only (approved tools to add when a feature requires external systems, after asking): additional **Testcontainers** modules (e.g., Kafka) and **WireMock** (for external HTTP APIs).
 
 ## Domain & Type Modeling
@@ -46,3 +46,11 @@
 ## Concurrency (Adapters Only)
 
 - When concurrency is needed in adapters, prefer Virtual Threads (`Executors.newVirtualThreadPerTaskExecutor()`) and `ReentrantLock` over unmanaged thread pools or `synchronized` blocks around blocking I/O.
+
+## Spring Boot & Application Entry Point
+
+- **Composition Root**: Place the runnable Spring Boot entry point (`@SpringBootApplication`, e.g., `TaskApplication`) at the base package `com.sternitc.task` (outside `domain`, `ports`, `application`, and `adapters`).
+- **Explicit Bean Wiring**: Wire concrete `adapters.in`, `application`, and `adapters.out` beans explicitly via `@Bean` methods in the composition root—never place `@Service`, `@Component`, or `@Repository` annotations in `domain`, `ports`, `application`, or `adapters.out`.
+- **Externalized Configuration**: Configure runtime settings (e.g., `server.port`, database URI and database name) in `src/main/resources/application.properties` (overridable via environment variables or command-line properties).
+- **Runnable via Gradle**: Use the `org.springframework.boot` Gradle plugin (once approved) so the application can be started locally with `./gradlew bootRun` and packaged with `./gradlew bootJar`.
+- **Strict Spring Isolation**: Spring Boot types and annotations are permitted only in the composition root (`com.sternitc.task` entry point/config) and `adapters.in.rest`—never in `domain`, `ports`, `application`, or `adapters.out`.

@@ -19,8 +19,9 @@ Single source of truth for domain terminology used across `.kiro/specs/`, `com.s
 | **Task Planning Service** | Inbound port boundary (`ports.in`) for creating and querying planned tasks. | `task-planning` |
 | **CommandId** | Unique typed identity (`UUID`) of a stored command. | `command-processing` |
 | **CommandReceipt** | Value object (`commandId`, `timestamp`) returned immediately when a command is validated, stored, and accepted for async handling. | `command-processing` |
-| **StoredCommand** | Persisted command record stored before asynchronous execution, tracking execution outcome. | `command-processing` |
-| **CommandStoredEvent** | Domain event published immediately after a command is persisted to trigger asynchronous handling. | `command-processing` |
+| **CommandPayload** | Generic, extensible domain interface implemented by all persisted command payloads (e.g., `TaskCommandPayload`). | `command-processing` |
+| **StoredCommand** | Persisted command record stored before asynchronous execution, carrying a `CommandPayload` and tracking execution outcome. | `command-processing` |
+| **CommandStoredEvent** | Generic past-tense domain event (`CommandStoredEvent<T extends CommandPayload>`) published immediately after a command is persisted to trigger asynchronous handling on its typed channel. | `command-processing` |
 | **Executable** | Domain interface implemented by `Task` providing `isExecutable(ExecutableContext)`. | `task-executability` |
 | **ExecutableContext** | Domain interface passed to `isExecutable(ExecutableContext)`, holding `LoadedDomainObjects` and evaluated via a list of `Predicate<Task>` (implementable one or more times per `TaskType`, with a default implementation returning `true`). | `task-executability` |
 | **DomainObject** | Sealed domain interface (`EntityType1`, `EntityType2`, `EntityType3`, `EntityType4`) representing a loaded linked entity or aggregate identified by `EntityTypeName` and `EntityId`. | `task-executability` |

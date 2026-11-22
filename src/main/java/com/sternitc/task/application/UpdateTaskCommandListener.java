@@ -11,39 +11,47 @@ import com.sternitc.task.domain.model.InvalidTaskVersionException;
 import com.sternitc.task.domain.model.StoredCommand;
 import com.sternitc.task.domain.model.Task;
 import com.sternitc.task.domain.model.TaskCommandPayload;
-import com.sternitc.task.domain.model.TaskId;
 import com.sternitc.task.domain.model.TaskNotFoundException;
 import com.sternitc.task.ports.out.CommandRepository;
-import com.sternitc.task.ports.out.TaskIdGenerator;
 import com.sternitc.task.ports.out.TaskRepository;
 import java.util.Objects;
 import java.util.Optional;
 
-public final class CommandStoredEventHandler {
+public final class UpdateTaskCommandListener {
 
     private final CommandRepository commandRepository;
     private final TaskRepository taskRepository;
-    private final TaskIdGenerator taskIdGenerator;
 
-    public CommandStoredEventHandler(
+    public UpdateTaskCommandListener(
             CommandRepository commandRepository,
-            TaskRepository taskRepository,
-            TaskIdGenerator taskIdGenerator
+            TaskRepository taskRepository
     ) {
         this.commandRepository = Objects.requireNonNull(commandRepository, "commandRepository must not be null");
         this.taskRepository = Objects.requireNonNull(taskRepository, "taskRepository must not be null");
-        this.taskIdGenerator = Objects.requireNonNull(taskIdGenerator, "taskIdGenerator must not be null");
     }
 
-    public void handle(CommandStoredEvent event) {
+    public void handle(CommandStoredEvent<TaskCommandPayload.UpdateTask> event) {
         Objects.requireNonNull(event, "event must not be null");
         Optional<StoredCommand> maybeCommand = commandRepository.findById(event.commandId());
         if (maybeCommand.isEmpty()) {
             return;
         }
         StoredCommand stored = maybeCommand.orElseThrow();
+        if (!(stored.payload() instanceof TaskCommandPayload.UpdateTask updateTask)) {
+            commandRepository.save(stored.markFailed(
+                    "Unexpected command payload for UpdateTaskCommandListener: " + stored.payload().getClass().getSimpleName()
+            ));
+            return;
+        }
         try {
-            execute(stored.payload());
+            Task existing = taskRepository.findById(updateTask.taskId())
+                    .orElseThrow(() -> new TaskNotFoundException(updateTask.taskId()));
+            Task updated = existing.update(
+                    updateTask.status(),
+                    updateTask.planningWindow(),
+                    updateTask.executor()
+            );
+            taskRepository.save(updated);
             commandRepository.save(stored.markCompleted());
         } catch (TaskNotFoundException
                  | InvalidTaskTypeException
@@ -55,22 +63,6 @@ public final class CommandStoredEventHandler {
                  | InvalidLinkedEntityException ex) {
             String reason = Objects.requireNonNullElse(ex.getMessage(), ex.getClass().getSimpleName());
             commandRepository.save(stored.markFailed(reason));
-        }
-    }
-
-    private void execute(TaskCommandPayload payload) {
-        switch (payload) {
-            case TaskCommandPayload.PlanTask(var type, var owner, var planningWindow, var executor, var linkedEntities) -> {
-                TaskId id = taskIdGenerator.nextId();
-                Task task = Task.plan(id, type, owner, planningWindow, executor, linkedEntities);
-                taskRepository.save(task);
-            }
-            case TaskCommandPayload.UpdateTask(var taskId, var status, var planningWindow, var executor) -> {
-                Task existing = taskRepository.findById(taskId)
-                        .orElseThrow(() -> new TaskNotFoundException(taskId));
-                Task updated = existing.update(status, planningWindow, executor);
-                taskRepository.save(updated);
-            }
         }
     }
 }

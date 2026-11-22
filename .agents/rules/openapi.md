@@ -18,3 +18,6 @@
   - Controllers act as an Anti-Corruption Layer (ACL): translate between generated REST DTOs and `domain.model` / `ports.in` commands & queries, then delegate to `ports.in`.
 - **Strict Isolation**:
   - Generated OpenAPI classes and Spring framework types must never be imported by `domain` (`domain.model`, `domain.services`), `application`, `ports` (`ports.in`, `ports.out`), or `adapters.out`.
+- **HTTP `curl` Examples (`docs/create-task.md`)**:
+  - Maintain all `curl` statements for the project's HTTP endpoints in `docs/create-task.md`.
+  - Whenever an HTTP endpoint or payload is added or modified in `src/api/task-api.yaml`, add or update its corresponding `curl` statement in `docs/create-task.md`.

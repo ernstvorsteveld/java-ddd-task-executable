@@ -52,7 +52,9 @@ flowchart LR
 
 ## Testing & ArchUnit Enforcement
 
-Behavioral tests live strictly under `src/test/java/com/sternitc/task/ports/in/` with **at least one dedicated test class per `ports.in` interface** (`PlanTaskUseCaseTest`, `UpdateTaskUseCaseTest`, `TaskQueryTest`, `CommandQueryTest`). They extend `InboundPortTestSupport`, which shares a single **Testcontainers MongoDB** instance across the suite with a fresh isolated database per test, and exercise the real `application`, `domain`, and `adapters.out` layers (no isolated unit tests, no Mockito).
+Behavioral tests target only inbound boundaries (zero isolated unit tests, zero Mockito):
+- **Inbound Ports (`src/test/java/com/sternitc/task/ports/in/`)**: At least one dedicated test class per `ports.in` interface (`PlanTaskUseCaseTest`, `UpdateTaskUseCaseTest`, `TaskQueryTest`, `CommandQueryTest`) extending `InboundPortTestSupport` against a shared **Testcontainers MongoDB** instance (with a fresh isolated database per test).
+- **HTTP APIs (`src/test/java/com/sternitc/task/adapters/in/rest/`)**: Every HTTP REST API controller has a dedicated **REST Assured** API test (`TaskRestControllerTest`) running against embedded Tomcat, the real application/domain layers, typed `VirtualThreadCommandEventBus<T>` instances, and **Testcontainers MongoDB**.
 
 Every `./gradlew test` run also executes two ArchUnit suites that inspect the compiled Java 27 bytecode:
 
@@ -68,28 +70,38 @@ flowchart TD
     Hex --> H2["Enforces max 1 ports.in interface per application class"]
     Hex --> H3["Forbids Spring, API stubs, ports.in, and application in adapters.out"]
 
-    Boundary --> B1["Requires all *Test classes to live in ports.in or architecture"]
-    Boundary --> B2["Requires at least one matching *Test class per ports.in interface"]
-    Boundary --> B3["Forbids calling domain behavior/evaluation methods directly in ports.in tests"]
+    Boundary --> B1["Requires all *Test classes to live in ports.in, adapters.in.rest, or architecture"]
+    Boundary --> B2["Requires at least one matching *Test class per ports.in interface and per @RestController"]
+    Boundary --> B3["Forbids calling domain behavior/evaluation methods directly in behavioral tests"]
 ```
 
 | ArchUnit Suite | Scope | What It Prevents |
 | :--- | :--- | :--- |
 | `HexagonalArchitectureTest` | Production & generated OpenAPI classes (`DoNotIncludeTests`) | Layer boundary leaks, framework imports in `domain`/`ports`/`application`/`adapters.out`, combining multiple `ports.in` interfaces into one application class |
-| `TestBoundaryArchitectureTest` | Test classes, nested classes & lambdas (`OnlyIncludeTests`) | Adding isolated unit tests outside `ports.in`/`architecture`, omitting a dedicated test class for any `ports.in` interface, or bypassing `ports.in` by calling domain methods directly (`Task.{plan,reconstitute,restore,update,isExecutable}`, `Executable.isExecutable`, `ExecutableContext.evaluate`, `StoredCommand.{accepted,reconstitute,markCompleted,markFailed}`, `TaskSearchCriteria.matches`) |
+| `TestBoundaryArchitectureTest` | Test classes, nested classes & lambdas (`OnlyIncludeTests`) | Adding isolated unit tests outside `ports.in`/`adapters.in.rest`/`architecture`, omitting a dedicated test class for any `ports.in` interface or `@RestController`, or bypassing inbound boundaries by calling domain methods directly (`Task.{plan,reconstitute,restore,update,isExecutable}`, `Executable.isExecutable`, `ExecutableContext.evaluate`, `StoredCommand.{accepted,reconstitute,markCompleted,markFailed}`, `TaskSearchCriteria.matches`) |
 
 Read-only getters and value-object constructors (e.g., `task.status()`, `new PlanningWindow(...)`) remain permitted in `ports.in` tests to construct inputs and assert outputs. When adding new domain aggregates or behavior methods, register them in `FORBIDDEN_DOMAIN_METHODS` in `src/test/java/com/sternitc/task/architecture/TestBoundaryArchitectureTest.java`.
 
 ---
 
-## Build & Test
+## Build, Run & Test
 
-**Prerequisites**: Java 27 (configured via Gradle toolchain) and Docker (for Testcontainers MongoDB).
+**Prerequisites**: Java 27 (configured via Gradle toolchain) and Docker (for Testcontainers / local MongoDB).
 
 ```bash
-# Run all ports.in tests and ArchUnit checks
+# Run all ports.in tests, REST Assured HTTP API tests, and ArchUnit checks
 ./gradlew test
 
 # Clean, regenerate OpenAPI server stubs, compile (-Xlint:all -Werror), and run all tests
 ./gradlew clean openApiGenerate test
+
+# Run full stack (MongoDB + Spring Boot app on http://localhost:8080) via Docker Compose
+docker compose up --build
+
+# Or start only MongoDB in Docker and run the app locally via Gradle
+docker compose up mongo
+./gradlew bootRun
+
+# Build executable Spring Boot JAR
+./gradlew bootJar
 ```

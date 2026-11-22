@@ -6,6 +6,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.ReplaceOptions;
 import com.sternitc.task.domain.model.CommandExecutionStatus;
 import com.sternitc.task.domain.model.CommandId;
+import com.sternitc.task.domain.model.CommandPayload;
 import com.sternitc.task.domain.model.EntityId;
 import com.sternitc.task.domain.model.EntityTypeName;
 import com.sternitc.task.domain.model.LinkedEntities;
@@ -68,7 +69,16 @@ public final class MongoCommandRepository implements CommandRepository {
                 .append("status", command.status().name());
         command.failureReason().ifPresent(reason -> doc.append("failureReason", reason));
 
-        switch (command.payload()) {
+        if (command.payload() instanceof TaskCommandPayload taskPayload) {
+            appendTaskPayload(doc, taskPayload);
+        } else {
+            throw new IllegalStateException("Unsupported CommandPayload: " + command.payload().getClass().getName());
+        }
+        return doc;
+    }
+
+    private static void appendTaskPayload(Document doc, TaskCommandPayload taskPayload) {
+        switch (taskPayload) {
             case TaskCommandPayload.PlanTask(var type, var owner, var window, var executor, var linkedEntities) -> {
                 doc.append("payloadType", PAYLOAD_PLAN_TASK);
                 doc.append("payload", new Document("type", type.name())
@@ -87,7 +97,6 @@ public final class MongoCommandRepository implements CommandRepository {
                         .append("executor", toExecutorDocument(executor)));
             }
         }
-        return doc;
     }
 
     private static List<Document> toLinkedEntityDocuments(LinkedEntities linkedEntities) {
@@ -124,11 +133,11 @@ public final class MongoCommandRepository implements CommandRepository {
         String failureReason = doc.getString("failureReason");
         String payloadType = doc.getString("payloadType");
         Document payloadDoc = doc.get("payload", Document.class);
-        TaskCommandPayload payload = toPayload(payloadType, payloadDoc);
+        CommandPayload payload = toPayload(payloadType, payloadDoc);
         return StoredCommand.reconstitute(id, timestamp, payload, status, failureReason);
     }
 
-    private static TaskCommandPayload toPayload(String payloadType, Document payloadDoc) {
+    private static CommandPayload toPayload(String payloadType, Document payloadDoc) {
         var window = new PlanningWindow(
                 Instant.parse(payloadDoc.getString("startBefore")),
                 Instant.parse(payloadDoc.getString("finishBefore"))

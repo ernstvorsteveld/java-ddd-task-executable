@@ -51,7 +51,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public final class TaskRestController implements TasksApi {
+public class TaskRestController implements TasksApi {
 
     private final PlanTaskUseCase planTaskUseCase;
     private final UpdateTaskUseCase updateTaskUseCase;
